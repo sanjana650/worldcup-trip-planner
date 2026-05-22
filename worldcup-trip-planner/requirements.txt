@@ -1,4 +1,7 @@
 google-adk
+mcp
 pymongo
 python-dotenv
 flask
+google-generativeai
+fast-mcp
