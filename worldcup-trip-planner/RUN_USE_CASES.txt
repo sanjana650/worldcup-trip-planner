@@ -1,0 +1,65 @@
+World Cup Trip Planner - Run Guide
+
+Run these commands from the project folder:
+
+  cd worldcup-trip-planner
+
+1. Create and activate a virtual environment
+
+  python3 -m venv .venv
+  source .venv/bin/activate
+
+2. Install dependencies
+
+  pip install -r requirements.txt
+
+3. Make sure your .env file exists
+
+Your .env file should include MongoDB and Gemini/API credentials used by the app.
+The MongoDB variable can be either:
+
+  MONGODB_URI=your_mongodb_connection_string
+
+or:
+
+  MONGO_URI=your_mongodb_connection_string
+
+4. Run the default natural-language user prompt
+
+  python3 run_tool_use_cases.py agent
+
+This sends the default prompt:
+
+  I support Korea Republic. I am Indian, flying from DEL, and my budget is 5000 USD. Plan my World Cup trip.
+
+5. Run your own user prompt
+
+  python3 run_tool_use_cases.py agent --message "I support Korea Republic and I have a budget of 5000 USD. I am Indian and flying from DEL."
+
+6. Debug individual tool behavior
+
+  python3 run_tool_use_cases.py matches --team "Korea Republic"
+
+  python3 run_tool_use_cases.py visa --nationality IND --destination-country USA
+
+  python3 run_tool_use_cases.py flight --origin-airport DEL --itinerary-airports LAX DFW MEX
+
+  python3 run_tool_use_cases.py itinerary --team "Korea Republic" --nationality IND --origin-airport DEL --budget-usd 5000
+
+  python3 run_tool_use_cases.py bundle --team "Korea Republic" --nationality IND --origin-airport DEL --budget-usd 5000
+
+7. Test edge cases manually
+
+Unknown team:
+
+  python3 run_tool_use_cases.py bundle --team "Atlantis FC" --nationality IND --origin-airport DEL --budget-usd 5000
+
+Budget too low:
+
+  python3 run_tool_use_cases.py bundle --team "Korea Republic" --nationality IND --origin-airport DEL --budget-usd 1000
+
+If the command fails because dependencies are missing, run:
+
+  pip install -r requirements.txt
+
+If the command fails because MongoDB is missing, check your .env file.
