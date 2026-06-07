@@ -4,4 +4,4 @@ pymongo
 python-dotenv
 flask
 google-generativeai
-fastmcp
+fastmcpflask-cors
