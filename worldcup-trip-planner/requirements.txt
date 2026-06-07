@@ -3,5 +3,6 @@ mcp
 pymongo
 python-dotenv
 flask
+flask-cors
 google-generativeai
-fastmcpflask-cors
+fastmcp
