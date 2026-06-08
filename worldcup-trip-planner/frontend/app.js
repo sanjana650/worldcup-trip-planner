@@ -67,12 +67,12 @@ const HOST_CITIES = [
    MAP
    ============================================================ */
 const PIN_PATH = "M0,0 C-6,-9 -11,-13 -11,-20 A11,11 0 1,1 11,-20 C11,-13 6,-9 0,0 Z";
-const pinSVG = (name, cc, x, y) => `<g class="pin ${cc}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">
-  <text class="lbl" y="-30" text-anchor="middle">${name}</text>
-  <g class="body" filter="url(#pinshadow)"><path d="${PIN_PATH}"/><circle cx="0" cy="-20" r="4.3" fill="#fff"/></g></g>`;
+const pinSVG = (name, cc, x, y) => `<g class="pin ${cc}" data-city="${name}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">
+  <g class="body" filter="url(#pinshadow)"><path d="${PIN_PATH}"/><circle cx="0" cy="-20" r="4.3" fill="#fff"/></g>
+  <text class="lbl" y="-36" text-anchor="middle">${name}</text></g>`;
 const defsSVG = () => `<defs><filter id="pinshadow" x="-60%" y="-60%" width="220%" height="220%">
-  <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(27,26,22,.32)"/></filter></defs>`;
-const MAP_W = 560, MAP_H = 416;
+  <feDropShadow dx="0" dy="2" stdDeviation="1.8" flood-color="rgba(27,26,22,.32)"/></filter></defs>`;
+const MAP_W = 420, MAP_H = 320;
 
 async function renderMap() {
   const host = $("map");
@@ -87,7 +87,7 @@ async function renderMap() {
     const picks = feats.filter((f) => wanted[f.properties.name]);
     if (!picks.length) throw new Error("no features");
     const frame = { type: "Polygon", coordinates: [[[-128, 60], [-66, 60], [-66, 14], [-128, 14], [-128, 60]]] };
-    const proj = d3.geoMercator().fitExtent([[18, 14], [MAP_W - 18, MAP_H - 18]], frame);
+    const proj = d3.geoMercator().fitExtent([[14, 40], [MAP_W - 14, MAP_H - 16]], frame);
     const path = d3.geoPath(proj);
     MAP_PROJECT = (lng, lat) => proj([lng, lat]);
     let svg = `<svg viewBox="0 0 ${MAP_W} ${MAP_H}" xmlns="http://www.w3.org/2000/svg">${defsSVG()}`;
@@ -131,8 +131,7 @@ function resetRoute() {
   const a = svg.querySelector("#wc-route"), b = svg.querySelector("#wc-route-top");
   if (a) a.innerHTML = ""; if (b) b.innerHTML = "";
   svg.querySelectorAll(".pin.on-route").forEach((p) => p.classList.remove("on-route"));
-}
-function drawRoute(cells) {
+}function drawRoute(cells) {
   const map = $("map"), svg = map && map.querySelector("svg");
   if (!svg || !MAP_PROJECT) return;
   const routeG = svg.querySelector("#wc-route"), topG = svg.querySelector("#wc-route-top"), cap = $("map-caption");
@@ -146,7 +145,7 @@ function drawRoute(cells) {
   });
 
   const names = new Set(stops.map((s) => s.name));
-  svg.querySelectorAll(".pin").forEach((p) => p.classList.toggle("on-route", names.has(p.querySelector(".lbl").textContent)));
+  svg.querySelectorAll(".pin").forEach((p) => p.classList.toggle("on-route", names.has(p.getAttribute("data-city"))));
 
   if (!stops.length) { map.classList.remove("has-route"); if (cap) cap.innerHTML = ""; return; }
   map.classList.add("has-route");
@@ -154,14 +153,14 @@ function drawRoute(cells) {
   if (stops.length >= 2) {
     const pts = stops.map((s) => `${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ");
     routeG.innerHTML = `<polyline class="route-line" points="${pts}"></polyline>`
-      + stops.map((s) => `<circle class="route-ring" cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="10"></circle>`).join("");
+      + stops.map((s) => `<circle class="route-ring" cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="13"></circle>`).join("");
     const line = routeG.querySelector(".route-line");
     const len = line.getTotalLength();
     line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
     requestAnimationFrame(() => { line.style.strokeDashoffset = 0; });
   }
   topG.innerHTML = stops.map((s, i) =>
-    `<g class="route-badge"><circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="7.5"></circle>
+    `<g class="route-badge"><circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="7"></circle>
      <text x="${s.x.toFixed(1)}" y="${s.y.toFixed(1)}" text-anchor="middle" dominant-baseline="central">${i + 1}</text></g>`).join("");
 
   if (cap) cap.innerHTML = "Your route: " + stops.map((s) => `<b>${s.name}</b>`).join(" &rarr; ");
