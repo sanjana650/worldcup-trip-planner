@@ -1,8 +1,35 @@
-.env
-mcp.json
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 .venv/
-node_modules/
+venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+*.key
+*.pem
+*credentials*.json
+*service-account*.json
+*secret*.json
+
+# OS
 .DS_Store
-*.bak
+
+# Node
+node_modules/
+
+# Local backups
+*.bad
+*.simple
+*.bak_*
+*.before_*
+frontend_backup_*/
+frontend_broken_backup_*/
+
+# Logs
+*.log
