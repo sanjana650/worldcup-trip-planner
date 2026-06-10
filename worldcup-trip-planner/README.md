@@ -1,57 +1,49 @@
-## 1 Pre-requisites Installation on Your Machine
-# GCloud CLI
-Install gcloud cli from https://cloud.google.com/sdk/docs/install
-Follow these setup instructions: https://docs.cloud.google.com/sdk/docs/install-sdk
+k# World Cup 2026 Fan Trip Planner
 
-# Python 3.11+
-python --version
+## Live Demo
 
-# Node.js 20+
-node --version
+https://worldcup-trip-planner-ygtajujrxa-uc.a.run.app
 
-# Install Python packages
-pip install google-adk pymongo python-dotenv flask
+## Problem
 
-# Test MongoDB MCP server works
-npx -y mongodb-mcp-server@latest --help
+Planning a World Cup trip is difficult because fans need to coordinate matches, host cities, flights, hotels, visa requirements, travel routes, and budget feasibility across a multi-city tournament.
 
-Verify your installations by running these commands in your terminal:
-python --version
-node --version
-npm --version
+For the 2026 FIFA World Cup, this becomes even harder because the tournament is spread across the United States, Canada, and Mexico. Fans may want to follow a specific team, attend the final, or understand whether their budget is realistic before committing to travel.
 
-## Step 2: Clone
-# Clone the repository
-git clone https://github.com/sanjana650/worldcup-trip-planner.git
+## Solution
 
-# Move inside the project folder
-cd worldcup-trip-planner
+World Cup 2026 Fan Trip Planner is an AI-powered travel planning assistant that turns a fan's travel intent into a structured itinerary.
 
+Users can choose a team or the World Cup Final, enter their departure airport, citizenship, and budget, and receive a practical matchday travel plan. The app generates match stops, host cities, stadiums, hotel nights, estimated flight and lodging costs, visa guidance, and a budget verdict.
 
-## Step 3: Set Up a Virtual Environment & Dependencies
+The result is a clear travel-planning experience that helps fans understand where they need to go, how much the trip may cost, and whether their plan is realistic.
 
-# Create the Environment
-Windows (PowerShell):
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+## Features
 
-macOS / Linux (Bash):
-python3 -m venv .venv
-source .venv/bin/activate
+- Follow a selected national team through the World Cup group stage
+- Plan a trip to the World Cup Final
+- Enter departure airport, citizenship, and budget
+- Generate structured matchday itineraries
+- Estimate flight and lodging costs
+- Check whether the trip is within budget
+- Provide visa and travel requirement guidance
+- Handle low-budget edge cases
+- Visualize host cities and routes on a map
+- Deployed publicly on Google Cloud Run
 
-# Install Project Requirements
-Once your terminal shows (.venv) at the beginning of the prompt line, install all our core packages at once:
+## Architecture
 
-Bash
-pip install -r requirements.txt
-
-## Step 4: Local Configuration (.env)
-(Check group for env requirements)
-
-## Step 5: Verify Your Setup Works
-
-# 1. Test the MongoDB Atlas connection
-python -c "from pymongo import MongoClient; import os; from dotenv import load_dotenv; load_dotenv(); client = MongoClient(os.getenv('MONGODB_URI')); print('Databases:', client.list_database_names()); print('🎉 MongoDB Atlas Connected Successfully!')"
-
-# 2. Test the Gemini AI API connection
-python -c "import google.generativeai as genai; import os; from dotenv import load_dotenv; load_dotenv(); genai.configure(api_key=os.getenv('GOOGLE_API_KEY')); model = genai.GenerativeModel('gemini-2.5-flash'); print('Gemini Response:', model.generate_content('Say hello!').text)"
+```text
+User
+  ↓
+Frontend HTML/CSS/JavaScript
+  ↓
+Flask API Server
+  ↓
+Google ADK / Gemini Agent
+  ↓
+MongoDB Atlas + Custom Travel Tools
+  ↓
+Structured Itinerary Response
+  ↓
+Frontend renders itinerary, budget verdict, and map route

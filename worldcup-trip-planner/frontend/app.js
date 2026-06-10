@@ -443,3 +443,137 @@ renderMap();
 paintBudget();
 updateSummary();
 setDefaultCountdown();
+
+/* ============================================================
+   FLIGHT PANEL  ·  click a host-city pin -> side drawer
+   Client-only. API contract unchanged.
+   ============================================================ */
+const CITY_INFO = {
+  "Vancouver":      { iata: "YVR", stadium: "BC Place" },
+  "Seattle":        { iata: "SEA", stadium: "Lumen Field" },
+  "San Francisco":  { iata: "SFO", stadium: "Levi's Stadium" },
+  "Los Angeles":    { iata: "LAX", stadium: "SoFi Stadium" },
+  "Kansas City":    { iata: "MCI", stadium: "Arrowhead Stadium" },
+  "Dallas":         { iata: "DFW", stadium: "AT&T Stadium" },
+  "Houston":        { iata: "IAH", stadium: "NRG Stadium" },
+  "Atlanta":        { iata: "ATL", stadium: "Mercedes-Benz Stadium" },
+  "Miami":          { iata: "MIA", stadium: "Hard Rock Stadium" },
+  "Toronto":        { iata: "YYZ", stadium: "BMO Field" },
+  "Boston":         { iata: "BOS", stadium: "Gillette Stadium" },
+  "New York / NJ":  { iata: "EWR", stadium: "MetLife Stadium" },
+  "Philadelphia":   { iata: "PHL", stadium: "Lincoln Financial Field" },
+  "Monterrey":      { iata: "MTY", stadium: "Estadio BBVA" },
+  "Guadalajara":    { iata: "GDL", stadium: "Estadio Akron" },
+  "Mexico City":    { iata: "MEX", stadium: "Estadio Azteca" },
+};
+const COUNTRY_NAME = { us: "United States", ca: "Canada", mx: "Mexico" };
+
+/* a few common departure airports so we can show distance + est. time */
+const ORIGIN_COORDS = [
+  [["heathrow", "london"], 51.47, -0.4543, "LHR"],
+  [["gatwick"], 51.15, -0.18, "LGW"],
+  [["changi", "singapore"], 1.3644, 103.9915, "SIN"],
+  [["jfk", "new york"], 40.64, -73.78, "JFK"],
+  [["los angeles", "lax"], 33.94, -118.40, "LAX"],
+  [["dubai"], 25.25, 55.36, "DXB"],
+  [["doha"], 25.27, 51.61, "DOH"],
+  [["haneda", "tokyo"], 35.55, 139.78, "HND"],
+  [["sydney"], -33.95, 151.18, "SYD"],
+  [["paris", "charles de gaulle", "cdg"], 49.01, 2.55, "CDG"],
+  [["frankfurt"], 50.03, 8.56, "FRA"],
+  [["madrid"], 40.47, -3.56, "MAD"],
+  [["amsterdam", "schiphol"], 52.31, 4.76, "AMS"],
+];
+function originGuess(dep) {
+  const d = (dep || "").toLowerCase();
+  for (const [keys, lat, lng, code] of ORIGIN_COORDS) if (keys.some((k) => d.includes(k))) return { lat, lng, code };
+  return null;
+}
+function haversineKm(aLat, aLng, bLat, bLng) {
+  const R = 6371, t = Math.PI / 180;
+  const dLa = (bLat - aLat) * t, dLo = (bLng - aLng) * t;
+  const x = Math.sin(dLa / 2) ** 2 + Math.cos(aLat * t) * Math.cos(bLat * t) * Math.sin(dLo / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(x)));
+}
+function estDuration(km) {
+  const hrs = km / 820 + 0.5;               // cruise speed + taxi/climb buffer
+  const h = Math.floor(hrs), m = Math.round((hrs - h) * 60);
+  return `${h}h ${String(m).padStart(2, "0")}m`;
+}
+
+const fpOverlay = $("fp-overlay"), flightPanel = $("flightpanel"), fpBody = $("fp-body"),
+      fpCity = $("fp-city"), fpSub = $("fp-sub"), fpClose = $("fp-close");
+let fpLastFocus = null;
+
+function openFlightPanel(cityName) {
+  const city = HOST_CITIES.find(([n]) => n === cityName);
+  if (!city || !flightPanel) return;
+  const [name, cc, lng, lat] = city;
+  const info = CITY_INFO[name] || { iata: "", stadium: "" };
+  const dep = (departureEl.value || "London Heathrow").trim();
+  const org = originGuess(dep);
+
+  fpCity.textContent = name;
+  fpSub.textContent = `${COUNTRY_NAME[cc] || ""} · Host venue: ${info.stadium || "TBC"}`;
+
+  let rows = "";
+  if (org) {
+    const km = haversineKm(org.lat, org.lng, lat, lng);
+    rows += `<div class="row"><span class="k">Great-circle distance</span><span class="v">${km.toLocaleString()} km</span></div>`;
+    rows += `<div class="row"><span class="k">Est. nonstop time</span><span class="v">${estDuration(km)}</span></div>`;
+  }
+  rows += `<div class="row"><span class="k">Destination airport</span><span class="v">${info.iata || "TBC"}</span></div>`;
+  rows += `<div class="row"><span class="k">Stadium</span><span class="v">${info.stadium || "TBC"}</span></div>`;
+
+  const gf = `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights from ${dep} to ${name} ${info.iata}`)}`;
+  const planMsg = `I want to plan a World Cup 2026 trip to ${name} (${info.stadium}). I am flying from ${dep}.`;
+
+  fpBody.innerHTML = `
+    <div class="fp-route">
+      <div class="node"><div class="code">${org ? org.code : "YOU"}</div><div class="place">${dep}</div></div>
+      <div class="arrow" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M0 7h31M25 2l6 5-6 5"/></svg></div>
+      <div class="node" style="text-align:right"><div class="code">${info.iata || "•"}</div><div class="place">${name}</div></div>
+    </div>
+    <div class="fp-meta">${rows}</div>
+    <div class="fp-actions">
+      <a class="fp-btn primary" href="${gf}" target="_blank" rel="noopener noreferrer">Search flights on Google Flights &rarr;</a>
+      <button class="fp-btn ghost" id="fp-plan" type="button">Plan my trip to ${name}</button>
+    </div>
+    <p class="fp-note">${org
+      ? "Distance and time are great-circle estimates for a nonstop flight."
+      : "Add your departure airport in &ldquo;Flying from&rdquo; to see distance and flight-time estimates."}</p>`;
+
+  const planEl = $("fp-plan");
+  if (planEl) planEl.addEventListener("click", () => {
+    input.value = planMsg;
+    closeFlightPanel();
+    input.focus();
+  });
+
+  fpLastFocus = document.activeElement;
+  fpOverlay.hidden = false;
+  requestAnimationFrame(() => { fpOverlay.classList.add("open"); flightPanel.classList.add("open"); });
+  flightPanel.setAttribute("aria-hidden", "false");
+  fpClose.focus();
+}
+function closeFlightPanel() {
+  if (!flightPanel) return;
+  fpOverlay.classList.remove("open");
+  flightPanel.classList.remove("open");
+  flightPanel.setAttribute("aria-hidden", "true");
+  setTimeout(() => { fpOverlay.hidden = true; }, 340);
+  if (fpLastFocus && fpLastFocus.focus) fpLastFocus.focus();
+}
+
+const mapHost = $("map");
+if (mapHost) mapHost.addEventListener("click", (e) => {
+  const pin = e.target.closest && e.target.closest(".pin");
+  if (!pin) return;
+  const name = pin.getAttribute("data-city");
+  if (name) openFlightPanel(name);
+});
+if (fpClose) fpClose.addEventListener("click", closeFlightPanel);
+if (fpOverlay) fpOverlay.addEventListener("click", closeFlightPanel);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && flightPanel && flightPanel.classList.contains("open")) closeFlightPanel();
+});

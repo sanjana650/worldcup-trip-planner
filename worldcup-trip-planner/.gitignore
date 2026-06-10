@@ -33,3 +33,7 @@ frontend_broken_backup_*/
 
 # Logs
 *.log
+
+# Local final backups
+*_FINAL_BACKUP_*/
+../*_FINAL_BACKUP_*/
