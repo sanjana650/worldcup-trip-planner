@@ -1,4 +1,4 @@
-World Cup 2026 Fan Trip Planner
+# World Cup 2026 Fan Trip Planner
 
 ## Live Demo
 
